@@ -8,13 +8,15 @@ and whether it has arrived.
 It is a work queue for the language, not a complaint. Every entry was reached by
 writing real code and hitting the wall.
 
-**Where this stands on twill 1.7.1.** Delivered: 1 function values and closures,
-2 `F64`, 3 float math, 4 writing files and directories, 5 ranged reads, 7 the
-sign of `shr`, 12 generic containers, 13 a test runner. Open: 6 number parsing,
-8 `Bytes` distinct from `Str`, 9 decompression, 10 networking or a process
-interface, 11 a tensor across the seam, 14 an iteration protocol, and 15 below,
-which this repository found while writing the getting-started section. Each
-entry carries the check that settled it.
+**Where this stands.** Delivered: 1 function values and closures, 2 `F64`, 3
+float math, 4 writing files and directories, 5 ranged reads, 7 the sign of
+`shr`, 12 generic containers, 13 a test runner — all on twill 1.7.1 — and **10,
+a process interface**, which arrived after it and which `src/datasets.tw` now
+fetches with. Open: 6 number parsing, 8 `Bytes` distinct from `Str`, 9
+decompression (available now and deliberately not taken; see the entry), 11 a
+tensor across the seam, 14 an iteration protocol, and 15 below, which this
+repository found while writing the getting-started section. Each entry carries
+the check that settled it.
 
 The baseline is milestone 1 of `docs/self-hosting.md` in the twill repository:
 `mode systems`, `I64` with bitwise operations, `Str` with length, byte indexing
@@ -168,7 +170,7 @@ file is read and something has to decide whether to trust it as UTF-8.
 
 **Needs:** gzip, or a documented decision that the user decompresses first
 **Used by:** `src/datasets.tw` (MNIST and Fashion-MNIST ship as `.gz`)
-**Status: open on twill 1.7.1**, and reasonably so.
+**Status: still open, and now by choice rather than by absence.**
 
 warp reads the decompressed IDX file and tells the user to gunzip it. That is an
 extra step in every getting-started guide forever. Not a language feature so
@@ -176,13 +178,27 @@ much as a standard-library decision, and the honest options are a gzip reader in
 twill, a process interface (spool needs one anyway) so warp can shell out, or
 keeping the manual step and documenting it. Currently the third.
 
+The second is available now — `run` exists, and `fetch` already uses it — and
+has deliberately not been taken. Which files warp is willing to *write* is a
+bigger decision than which it is willing to read, and a decompressor that
+silently produces a second copy of a hundred and seventy megabytes is the kind
+of surprise entry 10 exists to avoid. Iris no longer needs it at all; the IDX
+files still do.
+
 ### 10. Networking, or a process interface
 
 **Needs:** an HTTPS fetch, or `run(program, argv, dir)`
 **Used by:** `src/datasets.tw`, which describes downloads it cannot perform
-**Status: open on twill 1.7.1.** There is no socket and no process builtin, so
-neither half of this is available. spool records the same gap and argues for the
-process interface as the smaller ask.
+**Status: delivered**, in the half this entry argued for. twill grew
+`run(program, argv, dir) -> Res[Str, Str]` after spool's own entry 1 asked for
+it, and `src/datasets.tw` now has `fetch`, which drives curl through it, and
+`digests`, which reads back what landed. There is still no socket, so the HTTPS
+half of this entry is untouched and does not need to be.
+
+What did not change is the argument below, which is the reason this entry was
+the one warp minded least: `fetch` is something a person types, no loader calls
+it, and it prints each file's size before fetching it. `warp.get("cifar-10")`
+still does not exist, and now that is a decision rather than a limitation.
 
 warp prints the URL and the expected size and asks the user to fetch the file.
 This is the entry warp is least unhappy about: a data-loading library that

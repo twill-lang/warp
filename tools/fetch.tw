@@ -1,0 +1,95 @@
+mode systems
+
+# warp fetch: download a dataset warp describes, and check what landed.
+#
+# The entry point for `docs/needs.md` entry 10. warp has no `main` of its own —
+# it is a library, and a pipeline is a program someone writes — so the one thing
+# that needs to be typed rather than imported lives here as a script.
+#
+# Nothing in `src/` calls this. That is the entry's own argument kept: a
+# data-loading library that downloads a hundred and seventy megabytes because
+# something imported it is a library that surprises people. Downloading is a
+# person's decision, so it is a person's command.
+#
+#   twill run tools/fetch.tw <dataset> <directory>
+#   twill run tools/fetch.tw --digests <dataset> <directory>
+#
+# The first fetches and verifies. The second only reads what is already on disk
+# and prints each file's sha256 beside its size, which is what `docs/datasets.md`
+# asks for when pinning a digest — and it is deliberately a separate command,
+# because a number printed by the same run that downloaded the file is not an
+# independent check of it.
+
+import "../src/datasets.tw" as ds
+
+let USAGE = "warp fetch: download a dataset warp describes.\n"
+  + "\n"
+  + "usage:\n"
+  + "  twill run tools/fetch.tw <dataset> <directory>\n"
+  + "  twill run tools/fetch.tw --digests <dataset> <directory>\n"
+  + "\n"
+  + "datasets: mnist, fashion-mnist, cifar-10, iris\n"
+  + "\n"
+  + "Files already present are left alone. Everything fetched is verified,\n"
+  + "which includes refusing a dataset whose digest is not pinned yet.\n"
+
+fn find(name: Str) -> Opt[ds.Dataset] {
+  let all = ds.all()
+  let i: I64 = 0
+  while i < len(all) {
+    if all[i].name == name { return Some(all[i]) }
+    i = i + 1
+  }
+  None
+}
+
+fn names() -> Str {
+  let all = ds.all()
+  let out = ""
+  let i: I64 = 0
+  while i < len(all) {
+    if i > 0 { out = out + ", " }
+    out = out + all[i].name
+    i = i + 1
+  }
+  out
+}
+
+fn main() {
+  # args()[0] is the program name, the way argv is everywhere else; spool's
+  # main.tw reads it the same way.
+  let all_args = args()
+  let argv = if len(all_args) > 0 { all_args[1:len(all_args)] } else { all_args }
+  let digests_only = len(argv) > 0 && argv[0] == "--digests"
+  let rest = if digests_only { argv[1:len(argv)] } else { argv }
+
+  if len(rest) != 2 {
+    write_out(USAGE)
+    exit(2)
+  }
+
+  let d: ds.Dataset = match find(rest[0]) {
+    Some(found) => found,
+    None => {
+      write_err("no dataset named " + rest[0] + ". warp describes: " + names() + "\n")
+      exit(2)
+      # `exit` does not return, and the checker cannot know that.
+      ds.iris()
+    },
+  }
+
+  let outcome = if digests_only { ds.digests(d, rest[1]) } else { ds.fetch(d, rest[1]) }
+
+  match outcome {
+    Res.Ok(_) => {
+      if !digests_only { print("verified " + d.name + " in " + rest[1]) }
+    },
+    Res.Err(why) => {
+      # Straight to stderr and a non-zero exit: this is the refusal `verify`
+      # exists for, and a script that fetched a dataset must be able to tell
+      # "it is here and checked" from "it is here".
+      write_err("warp: " + why + "\n")
+      exit(1)
+    },
+  }
+}

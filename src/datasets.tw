@@ -118,7 +118,13 @@ fn iris() -> Dataset = Dataset {
   citation: "Fisher, The use of multiple measurements in taxonomic problems, Annals of Eugenics 7(2), 1936.",
   licence: "CC BY 4.0 as distributed by UCI",
   files: [
-    File { name: "iris.data", url: "https://archive.ics.uci.edu/static/public/53/iris.zip", sha256: "", bytes: 4551 },
+    # The URL is the file itself, not UCI's zip of the whole donation. The entry
+    # used to name `static/public/53/iris.zip` beside a file called `iris.data`
+    # and a size of 4551 bytes, which is the size of the extracted file: no
+    # fetch of that URL could ever have satisfied this row. The direct path
+    # returns exactly 4551 bytes, so the size the table already carried is what
+    # says the URL below is the right one.
+    File { name: "iris.data", url: "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data", sha256: "", bytes: 4551 },
   ],
   shape: [4],
   classes: 3,
@@ -159,6 +165,135 @@ fn verify(d: Dataset, dir: Str) -> Res[Unit, Str] {
             ". Delete the file and download it again; if it fails twice, do not use it.")
         }
       },
+    }
+    i = i + 1
+  }
+  Ok(unit)
+}
+
+# ── Fetching ────────────────────────────────────────────────────────────────
+#
+# warp asked for this in docs/needs.md entries 9 and 10 and got told there was
+# no way to do it: no socket and no process builtin in twill 1.7.1. `run` exists
+# now, so this is the smaller half of that ask — fetching by driving the
+# downloader the user already has, rather than warp taking on a network stack.
+#
+# ── WHAT THIS DELIBERATELY IS NOT ───────────────────────────────────────────
+#
+# It is not automatic, and no loader calls it. needs.md entry 10 is the one warp
+# was least unhappy about, and its reason still holds: a data-loading library
+# that silently downloads a hundred and seventy megabytes is a library that
+# surprises people. So `fetch` is something a person types, it says what it is
+# about to do and how large it is before it does it, and every file it lands is
+# put straight through `verify`.
+#
+# ── ON SHELLING OUT ─────────────────────────────────────────────────────────
+#
+# `run` takes an argument vector and never a shell, so a URL out of the table
+# above reaches curl as one argument and cannot become a command. The URL is
+# still warp's own — a caller cannot pass one in — which is the second half of
+# the same rule: this fetches what the dataset table names and nothing else.
+#
+# curl is required, and its absence is reported as itself rather than as a
+# failed download. `--fail` is what makes an HTTP error an exit status instead
+# of a saved error page, and `--location` follows the redirect every one of
+# these URLs actually serves.
+
+fn curl_argv(url: Str, out: Str) -> Arr[Str] {
+  # --fail          an HTTP error is a non-zero exit, not a 500-byte HTML file
+  #                 saved under the name of a dataset
+  # --location      every URL in the table above redirects at least once
+  # --silent        progress on a non-tty is noise; warp prints its own line
+  # --show-error    but a failure still has to say why
+  # --output        never stdout: `run` buffers it, and these are megabytes
+  ["--fail", "--location", "--silent", "--show-error", "--output", out, url]
+}
+
+# Download one file to `dir`, without checking it. `fetch` is what callers use;
+# this is the half that talks to the network, kept separate so the verification
+# is visibly not optional.
+fn download(f: File, dir: Str) -> Res[Unit, Str] {
+  let out = path_join(dir, f.name)
+  # The output path is the bare name because `run` is given `dir` as the working
+  # directory: joining it again wrote to `dir/dir/name`, which does not exist,
+  # and curl reported it as "Failure writing output to destination" rather than
+  # as a missing directory. `out` above is the same file, spelled from here.
+  match run("curl", curl_argv(f.url, f.name), dir) {
+    Res.Ok(_) => Ok(unit),
+    Res.Err(why) => {
+      # A partial file left behind by a failed transfer would fail the size
+      # check next time with a confusing message about an error page.
+      remove_file(out)
+      Err("downloading " + f.name + " from " + f.url + " failed: " + why)
+    },
+  }
+}
+
+# Fetch every file of a dataset that is not already present, then verify all of
+# them.
+#
+# A file that is already there is left alone rather than re-downloaded: these
+# are large, and `verify` is what decides whether what is on disk is right. The
+# consequence is that a corrupt file has to be deleted by hand, which is the
+# safer way round — warp deleting a hundred and seventy megabytes of somebody
+# else's disk on a digest mismatch is not its call.
+fn fetch(d: Dataset, dir: Str) -> Res[Unit, Str] {
+  match mkdir_all(dir) {
+    Res.Err(e) => return Err("cannot create " + dir + ": " + e),
+    Res.Ok(_) => unit,
+  }
+
+  let i: I64 = 0
+  while i < len(d.files) {
+    let f = d.files[i]
+    let path = path_join(dir, f.name)
+    if path_exists(path) {
+      print("have  " + f.name)
+    } else {
+      # Said before the download rather than after, because the number is the
+      # thing a person wants to see while deciding whether to wait for it.
+      print("fetch " + f.name + "  " + str(f.bytes) + " bytes  " + f.url)
+      match download(f, dir) {
+        Res.Err(e) => return Err(e),
+        Res.Ok(_) => unit,
+      }
+    }
+    i = i + 1
+  }
+
+  # Every path out of here goes through the same check the manual instructions
+  # told the user to trust, including the one that refuses an unpinned digest.
+  verify(d, dir)
+}
+
+# Print the sha256 of every file of a dataset that is on disk.
+#
+# The digests in the table above are empty, and the comment at the top of this
+# file says why: pinning one needs the file in hand, and a digest copied from
+# somewhere without checking it is worse than none. `fetch` is what puts the
+# file in hand; this is what reads out the number to record. It is a report and
+# writes nothing, because deciding a digest is right is a person's judgement
+# about what they downloaded and from where.
+fn digests(d: Dataset, dir: Str) -> Res[Unit, Str] {
+  let i: I64 = 0
+  while i < len(d.files) {
+    let f = d.files[i]
+    let path = path_join(dir, f.name)
+    if !path_exists(path) {
+      print("absent " + f.name)
+    } else {
+      match read_file(path) {
+        Res.Err(e) => return Err("cannot read " + path + ": " + e),
+        Res.Ok(body) => {
+          let got = sha.hash_str(body)
+          let size = file_size(path)
+          # The size is printed beside it because a digest of the wrong number
+          # of bytes is a digest of an error page, and that is the mistake this
+          # whole path exists to prevent.
+          let mismatch = if size == f.bytes { "" } else { "  SIZE DOES NOT MATCH THE TABLE" }
+          print(f.name + "  " + got + "  " + str(size) + " bytes" + mismatch)
+        },
+      }
     }
     i = i + 1
   }

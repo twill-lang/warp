@@ -37,10 +37,56 @@ records what warp read off whatever the mirror served, which is the thing the
 digest is supposed to be independent of. The README shows the refusal, digest
 and all, precisely because that number is not yet worth pinning.
 
+**Half of that is now one command.** `fetch` downloads a dataset and `digests`
+reads out what is on disk, so "the files in hand" no longer means doing it by
+hand (`docs/needs.md` entry 10, delivered by twill's process interface). What
+they cannot supply is the independent half: the number `digests` prints came
+from the same download it is meant to check. It was run on 2026-09-01 against
+MNIST and Fashion-MNIST, every file the size the table already expected, and
+the digests are deliberately **not** recorded here — a second source has to
+agree with them first, and that is what the paragraph above says and still
+means.
+
 Expect it to be slow. `std/hash` is SHA-256 written in twill, and MNIST's
 9.9 MB training file took about four minutes on the machine that produced the
 line in the README. `verify` checking the size first is what keeps that cost
 off the common failure.
+
+## Fetching
+
+```bash
+twill run tools/fetch.tw mnist ./data            # fetch, then verify
+twill run tools/fetch.tw --digests mnist ./data  # read back what is on disk
+```
+
+From twill, the same two: `ds.fetch(ds.mnist(), "./data")` and
+`ds.digests(ds.mnist(), "./data")`.
+
+`fetch` downloads the files a dataset names, into a directory, and then puts
+them through `verify` — including the refusal above, which is why a first fetch
+of anything ends in "has no pinned digest". A file that is already there is left
+alone; a transfer that fails deletes its partial file so the next run's size
+check is not answering about a fragment.
+
+Three things it deliberately is not:
+
+- **Automatic.** No loader calls it. A data-loading library that silently
+  downloads a hundred and seventy megabytes surprises people, which is the
+  argument `docs/needs.md` entry 10 made against wanting this at all. It is
+  something a person types, and it prints each file's size before fetching it.
+- **A network stack.** It drives `curl`, which the user already has, through
+  twill's `run`. `run` takes an argument vector and never a shell, so a URL
+  reaches curl as one argument and cannot become a command — and the URL is
+  warp's own, out of the table in `src/datasets.tw`, never a caller's.
+- **A decompressor.** `docs/needs.md` entry 9 is still open: the `.gz` files
+  stay compressed and the manual `gunzip` step stays in the getting-started
+  guide. Shelling out to `gunzip` is now possible and has not been done, because
+  which files warp is willing to write is a bigger decision than which it is
+  willing to read.
+
+`curl --fail` is what makes an HTTP error an exit status rather than a saved
+error page, and `--location` follows the redirect these URLs actually serve.
+curl missing is reported as itself rather than as a failed download.
 
 ## The size check comes first
 
@@ -98,10 +144,12 @@ learn it, and a wrong size is the overwhelmingly common failure.
   Annals of Eugenics 7(2), 1936.
 - **Licence.** CC BY 4.0 as distributed by UCI.
 - **Format.** CSV, 150 rows, four features, three classes.
-- **Note on the download.** The URL in `src/datasets.tw` is UCI's zip, and the
-  file warp names and sizes is `iris.data`, the CSV inside it. Unzip first, the
-  same manual step the gzipped IDX files need and for the same reason: twill
-  cannot decompress. See entry 9 of `docs/needs.md`.
+- **Note on the download.** The URL used to be UCI's zip while the file warp
+  names and sizes is `iris.data`, the CSV inside it, so the row described a
+  fetch that could not succeed and the answer here was "unzip first". It now
+  names the CSV directly, which returns exactly the 4551 bytes the row already
+  expected — the size the table carried is what says the new URL is the right
+  file. Iris is the one dataset here that needs no decompression step at all.
 - **Note.** Published in a eugenics journal by an author who was a proponent of
   it. It is included because it is everywhere and small enough to be useful in a
   test, and the provenance is recorded because people should know what they are
