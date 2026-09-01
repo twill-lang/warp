@@ -8,4 +8,4 @@ entry = "src/pipeline.tw"
 # exactly one SHA-256 in the toolchain and warp no longer needs a vendored
 # directory to compute a cache key. Nothing under `src/` imports spool.
 [dependencies]
-twill = { version = "^1.7.0", git = "https://github.com/twill-lang/twill" }
+twill = { version = "^1.8.0", git = "https://github.com/twill-lang/twill" }

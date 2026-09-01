@@ -36,12 +36,12 @@ source and twill runs it.
 
 ```bash
 curl -fsSL -o twill \
-  https://github.com/twill-lang/twill/releases/download/v1.7.1/twill-v1.7.1-linux-amd64
+  https://github.com/twill-lang/twill/releases/download/v1.8.0/twill-v1.8.0-linux-amd64
 chmod +x twill
 ./twill --version
 ```
 
-That prints `Twill 1.7.1`. Swap the suffix for the machine: `linux-amd64`,
+That prints `Twill 1.8.0`. Swap the suffix for the machine: `linux-amd64`,
 `linux-arm64`, `darwin-amd64`, `darwin-arm64` or `windows-amd64.exe`.
 
 Then the suites, from the root of a clone:
@@ -63,7 +63,7 @@ ok    tests/stream_test.tw
 ### The example wants MNIST, and will fetch it only if you ask
 
 `examples/train.tw` reads the real MNIST files. warp can now download them —
-`ds.fetch` drives curl through twill's `run`, which arrived after 1.7.1 — but
+`ds.fetch` drives curl through twill's `run`, which arrived in 1.8.0 — but
 nothing calls it for you: a library that quietly pulls a hundred and seventy
 megabytes is a library that surprises people. The gunzip is still your step;
 `docs/needs.md` entry 9 says why that one has not been taken.
