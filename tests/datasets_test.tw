@@ -154,6 +154,65 @@ fn a_windows_line_ending_does_not_become_part_of_the_last_field() {
   t.equal_i64("two lines", len(lines), 2)
 }
 
+# ── Fetching ────────────────────────────────────────────────────────────────
+#
+# `fetch` and `download` need the network and a publisher, so what is checked
+# here is everything about them that can be decided without either: the command
+# line handed to curl, and the fact that a fetch of a dataset warp cannot
+# describe is refused before anything is downloaded.
+
+fn the_curl_command_never_becomes_a_shell_command() {
+  # The URL is warp's own, but it is still an argument, and `run` takes an
+  # argument vector precisely so that a semicolon in one is text. This pins the
+  # flags that make a failure a failure: without --fail an HTTP error is saved
+  # under the name of a dataset, and without --location every one of these URLs
+  # lands on a redirect page.
+  let argv = ds.curl_argv("https://example.com/a.gz", "a.gz")
+  t.check("--fail is present, so an HTTP error is not a saved file", contains_arg(argv, "--fail"))
+  t.check("--location is present, so a redirect is followed", contains_arg(argv, "--location"))
+  t.check("--show-error is present, so a silent failure still says why", contains_arg(argv, "--show-error"))
+  t.check("the output is a file and not stdout", contains_arg(argv, "--output"))
+  t.check("the url is the last argument, unquoted and unjoined", argv[len(argv) - 1] == "https://example.com/a.gz")
+  # Nothing in the vector is a shell fragment: no `>` redirect, no `&&`, no
+  # command string. If one ever appears here it is a shell in disguise.
+  let i: I64 = 0
+  while i < len(argv) {
+    t.check("argument " + str(i) + " is not a shell fragment",
+      !sx.contains(argv[i], ">") && !sx.contains(argv[i], "&&") && !sx.contains(argv[i], ";"))
+    i = i + 1
+  }
+}
+
+fn every_url_is_a_file_and_not_an_archive_of_one() {
+  # The iris row named UCI's zip beside a file called `iris.data` and the size
+  # of the CSV inside it, so no fetch of that row could ever have succeeded.
+  # A row whose URL ends in an archive extension while its file name does not
+  # is that mistake again.
+  let all = ds.all()
+  let i: I64 = 0
+  while i < len(all) {
+    let d = all[i]
+    let j: I64 = 0
+    while j < len(d.files) {
+      let f = d.files[j]
+      let archive = sx.ends_with(f.url, ".zip") || sx.ends_with(f.url, ".tar")
+      let named = sx.ends_with(f.name, ".zip") || sx.ends_with(f.name, ".tar")
+      t.check(f.name + ": the url is the file the row names, not an archive of it", !archive || named)
+      j = j + 1
+    }
+    i = i + 1
+  }
+}
+
+fn contains_arg(argv: Arr[Str], want: Str) -> Bool {
+  let i: I64 = 0
+  while i < len(argv) {
+    if argv[i] == want { return true }
+    i = i + 1
+  }
+  false
+}
+
 fn be32(v: I64) -> Str = chr(0) + chr(0) + chr(v / 256) + chr(v % 256)
 
 fn zeros(n: I64) -> Str {
@@ -180,4 +239,6 @@ a_ragged_csv_is_an_error_naming_the_row()
 a_comment_line_is_skipped_the_way_twills_own_reader_skips_it()
 numbers_round_trip_through_the_parser()
 a_windows_line_ending_does_not_become_part_of_the_last_field()
+the_curl_command_never_becomes_a_shell_command()
+every_url_is_a_file_and_not_an_archive_of_one()
 t.report("datasets")

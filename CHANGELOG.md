@@ -5,6 +5,38 @@ cannot point at.
 
 ## Unreleased
 
+### warp can fetch a dataset
+
+`docs/needs.md` entry 10 asked for an HTTPS client or a process interface and
+said neither existed. twill grew `run(program, argv, dir)`, so `src/datasets.tw`
+now has `fetch`, which downloads the files a dataset names by driving curl, and
+`digests`, which reads back the sha256 of what is on disk. `tools/fetch.tw` is
+the command form of both.
+
+Nothing in `src/` calls `fetch`. That is the entry's own argument, kept: a
+library that quietly downloads a hundred and seventy megabytes surprises people,
+so downloading is a person's decision and therefore a person's command. Every
+fetch ends in `verify`, including its refusal of an unpinned digest, and a
+failed transfer deletes its partial file so the next size check is not answering
+about a fragment.
+
+`run` takes an argument vector and never a shell, so a URL reaches curl as one
+argument and cannot become a command; a test pins the flags that make an HTTP
+error a failure rather than a saved error page.
+
+The digests are still not pinned, and `fetch` does not change that:
+`docs/datasets.md` says a digest read off the same download it is meant to check
+is not an independent check, and it is right. What it does change is that "the
+files in hand" is now one command rather than a manual step.
+
+### Iris named a URL no fetch of it could satisfy
+
+The row gave UCI's zip as the URL beside a file called `iris.data` and a size of
+4551 bytes, which is the CSV inside the archive. The direct path returns exactly
+4551 bytes, so the size the table already carried is the evidence for the URL
+that replaced it, and iris is now the one dataset here needing no decompression
+step. A test refuses a row whose URL is an archive of the file it names.
+
 Fifteen commits since `v0.1.0`. Almost all of them are either following twill's
 releases or fixing what following them exposed, which is the shape of a library
 written before the subset it is written in existed.

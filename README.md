@@ -36,12 +36,12 @@ source and twill runs it.
 
 ```bash
 curl -fsSL -o twill \
-  https://github.com/twill-lang/twill/releases/download/v1.7.1/twill-v1.7.1-linux-amd64
+  https://github.com/twill-lang/twill/releases/download/v1.8.0/twill-v1.8.0-linux-amd64
 chmod +x twill
 ./twill --version
 ```
 
-That prints `Twill 1.7.1`. Swap the suffix for the machine: `linux-amd64`,
+That prints `Twill 1.8.0`. Swap the suffix for the machine: `linux-amd64`,
 `linux-arm64`, `darwin-amd64`, `darwin-arm64` or `windows-amd64.exe`.
 
 Then the suites, from the root of a clone:
@@ -60,15 +60,25 @@ ok    tests/stream_test.tw
 5 file(s): 5 passed, 0 failed
 ```
 
-### The example wants MNIST, and will not fetch it
+### The example wants MNIST, and will fetch it only if you ask
 
-`examples/train.tw` reads the real MNIST files. twill has no network, so the
-download is your step, and twill cannot decompress, so the gunzip is your step
-too. Both are recorded in `docs/needs.md`.
+`examples/train.tw` reads the real MNIST files. warp can now download them:
+`ds.fetch` drives curl through twill's `run`, which arrived in 1.8.0, but
+nothing calls it for you: a library that quietly pulls a hundred and seventy
+megabytes is a library that surprises people. The gunzip is still your step;
+`docs/needs.md` entry 9 says why that one has not been taken.
 
 The files go under `examples/`, not under the root of the clone: a relative
 path in a twill program resolves against the directory of the file being run,
 and `examples/train.tw` asks for `data/mnist`.
+
+```bash
+twill run tools/fetch.tw mnist examples/data/mnist
+gunzip -k examples/data/mnist/*.gz
+twill run examples/train.tw
+```
+
+or, with no warp involved at all, which is what it does for you:
 
 ```bash
 mkdir -p examples/data/mnist
@@ -77,8 +87,6 @@ for f in train-images-idx3-ubyte train-labels-idx1-ubyte \
   curl -fsSL -o "examples/data/mnist/$f.gz" \
     "https://storage.googleapis.com/cvdf-datasets/mnist/$f.gz"
 done
-gunzip -k examples/data/mnist/*.gz
-twill run examples/train.tw
 ```
 
 That stops, on purpose, at the first thing warp checks:
@@ -288,11 +296,13 @@ src/
   cache.tw      disk cache keyed on the transformation chain
   augment.tw    image and sequence transforms, each taking an explicit seed
   rng.tw        deterministic seeding, splitting and permutation
-  datasets.tw   descriptions, verification, and the IDX and CSV readers
+  datasets.tw   descriptions, verification, fetching, and the IDX and CSV readers
   stream.tw     chunked reading for data larger than memory
   sample.tw     what moves through a pipeline
   dtype.tw      the dtype codes a pipeline and a batch declare
   strutil.tw    parsing, because the subset has none
+tools/fetch.tw  the one thing that is typed rather than imported: download a
+                dataset, or read back the digests of one already on disk
 tests/          five suites, harness.tw is the runner: pipeline, cache,
                 augment (which covers rng too), datasets and stream
 docs/needs.md   what the language still owes this code
