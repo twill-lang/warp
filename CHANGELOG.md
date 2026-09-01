@@ -29,6 +29,15 @@ The digests are still not pinned, and `fetch` does not change that:
 is not an independent check, and it is right. What it does change is that "the
 files in hand" is now one command rather than a manual step.
 
+### This needs a twill newer than 1.7.1
+
+`run` is not in a twill release yet. Until one exists, this code checks and runs
+only against a twill built from the language repository, and CI — which pins
+`v1.7.1` on purpose, so that a green run means a known compiler — will fail at
+`twill check` with `unknown name "run"`. That is the correct failure and not
+something to work around: the pin moves when the release exists, and the
+`^1.7.0` in `spool.toml` moves with it.
+
 ### Iris named a URL no fetch of it could satisfy
 
 The row gave UCI's zip as the URL beside a file called `iris.data` and a size of
