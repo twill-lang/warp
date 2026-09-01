@@ -43,7 +43,7 @@ hand (`docs/needs.md` entry 10, delivered by twill's process interface). What
 they cannot supply is the independent half: the number `digests` prints came
 from the same download it is meant to check. It was run on 2026-09-01 against
 MNIST and Fashion-MNIST, every file the size the table already expected, and
-the digests are deliberately **not** recorded here — a second source has to
+the digests are deliberately **not** recorded here: a second source has to
 agree with them first, and that is what the paragraph above says and still
 means.
 
@@ -63,7 +63,7 @@ From twill, the same two: `ds.fetch(ds.mnist(), "./data")` and
 `ds.digests(ds.mnist(), "./data")`.
 
 `fetch` downloads the files a dataset names, into a directory, and then puts
-them through `verify` — including the refusal above, which is why a first fetch
+them through `verify`, including the refusal above, which is why a first fetch
 of anything ends in "has no pinned digest". A file that is already there is left
 alone; a transfer that fails deletes its partial file so the next run's size
 check is not answering about a fragment.
@@ -76,7 +76,7 @@ Three things it deliberately is not:
   something a person types, and it prints each file's size before fetching it.
 - **A network stack.** It drives `curl`, which the user already has, through
   twill's `run`. `run` takes an argument vector and never a shell, so a URL
-  reaches curl as one argument and cannot become a command — and the URL is
+  reaches curl as one argument and cannot become a command, and the URL is
   warp's own, out of the table in `src/datasets.tw`, never a caller's.
 - **A decompressor.** `docs/needs.md` entry 9 is still open: the `.gz` files
   stay compressed and the manual `gunzip` step stays in the getting-started
@@ -148,7 +148,7 @@ learn it, and a wrong size is the overwhelmingly common failure.
   names and sizes is `iris.data`, the CSV inside it, so the row described a
   fetch that could not succeed and the answer here was "unzip first". It now
   names the CSV directly, which returns exactly the 4551 bytes the row already
-  expected — the size the table carried is what says the new URL is the right
+  expected: the size the table carried is what says the new URL is the right
   file. Iris is the one dataset here that needs no decompression step at all.
 - **Note.** Published in a eugenics journal by an author who was a proponent of
   it. It is included because it is everywhere and small enough to be useful in a

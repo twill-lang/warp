@@ -10,7 +10,7 @@ writing real code and hitting the wall.
 
 **Where this stands.** Delivered: 1 function values and closures, 2 `F64`, 3
 float math, 4 writing files and directories, 5 ranged reads, 7 the sign of
-`shr`, 12 generic containers, 13 a test runner — all on twill 1.7.1 — and **10,
+`shr`, 12 generic containers, 13 a test runner, all on twill 1.7.1, and **10,
 a process interface**, which arrived after it and which `src/datasets.tw` now
 fetches with. Open: 6 number parsing, 8 `Bytes` distinct from `Str`, 9
 decompression (available now and deliberately not taken; see the entry), 11 a
@@ -178,7 +178,7 @@ much as a standard-library decision, and the honest options are a gzip reader in
 twill, a process interface (spool needs one anyway) so warp can shell out, or
 keeping the manual step and documenting it. Currently the third.
 
-The second is available now — `run` exists, and `fetch` already uses it — and
+The second is available now (`run` exists, and `fetch` already uses it) and
 has deliberately not been taken. Which files warp is willing to *write* is a
 bigger decision than which it is willing to read, and a decompressor that
 silently produces a second copy of a hundred and seventy megabytes is the kind

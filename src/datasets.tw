@@ -175,7 +175,7 @@ fn verify(d: Dataset, dir: Str) -> Res[Unit, Str] {
 #
 # warp asked for this in docs/needs.md entries 9 and 10 and got told there was
 # no way to do it: no socket and no process builtin in twill 1.7.1. `run` exists
-# now, so this is the smaller half of that ask — fetching by driving the
+# now, so this is the smaller half of that ask: fetching by driving the
 # downloader the user already has, rather than warp taking on a network stack.
 #
 # ── WHAT THIS DELIBERATELY IS NOT ───────────────────────────────────────────
@@ -191,7 +191,7 @@ fn verify(d: Dataset, dir: Str) -> Res[Unit, Str] {
 #
 # `run` takes an argument vector and never a shell, so a URL out of the table
 # above reaches curl as one argument and cannot become a command. The URL is
-# still warp's own — a caller cannot pass one in — which is the second half of
+# still warp's own, and a caller cannot pass one in, which is the second half of
 # the same rule: this fetches what the dataset table names and nothing else.
 #
 # curl is required, and its absence is reported as itself rather than as a
@@ -235,7 +235,7 @@ fn download(f: File, dir: Str) -> Res[Unit, Str] {
 # A file that is already there is left alone rather than re-downloaded: these
 # are large, and `verify` is what decides whether what is on disk is right. The
 # consequence is that a corrupt file has to be deleted by hand, which is the
-# safer way round — warp deleting a hundred and seventy megabytes of somebody
+# safer way round, because warp deleting a hundred and seventy megabytes of somebody
 # else's disk on a digest mismatch is not its call.
 fn fetch(d: Dataset, dir: Str) -> Res[Unit, Str] {
   match mkdir_all(dir) {

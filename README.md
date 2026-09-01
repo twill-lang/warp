@@ -62,8 +62,8 @@ ok    tests/stream_test.tw
 
 ### The example wants MNIST, and will fetch it only if you ask
 
-`examples/train.tw` reads the real MNIST files. warp can now download them —
-`ds.fetch` drives curl through twill's `run`, which arrived in 1.8.0 — but
+`examples/train.tw` reads the real MNIST files. warp can now download them:
+`ds.fetch` drives curl through twill's `run`, which arrived in 1.8.0, but
 nothing calls it for you: a library that quietly pulls a hundred and seventy
 megabytes is a library that surprises people. The gunzip is still your step;
 `docs/needs.md` entry 9 says why that one has not been taken.

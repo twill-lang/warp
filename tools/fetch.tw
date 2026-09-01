@@ -2,8 +2,8 @@ mode systems
 
 # warp fetch: download a dataset warp describes, and check what landed.
 #
-# The entry point for `docs/needs.md` entry 10. warp has no `main` of its own —
-# it is a library, and a pipeline is a program someone writes — so the one thing
+# The entry point for `docs/needs.md` entry 10. warp has no `main` of its own:
+# it is a library, and a pipeline is a program someone writes, so the one thing
 # that needs to be typed rather than imported lives here as a script.
 #
 # Nothing in `src/` calls this. That is the entry's own argument kept: a
@@ -16,7 +16,7 @@ mode systems
 #
 # The first fetches and verifies. The second only reads what is already on disk
 # and prints each file's sha256 beside its size, which is what `docs/datasets.md`
-# asks for when pinning a digest — and it is deliberately a separate command,
+# asks for when pinning a digest, and it is deliberately a separate command,
 # because a number printed by the same run that downloaded the file is not an
 # independent check of it.
 
