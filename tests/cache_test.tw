@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/cache.tw" as cache
 import "../src/pipeline.tw" as pipe
 import "../src/sample.tw" as smp

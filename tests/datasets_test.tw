@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/datasets.tw" as ds
 import "../src/strutil.tw" as sx
 import "../src/sample.tw" as smp

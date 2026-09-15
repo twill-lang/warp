@@ -31,17 +31,18 @@ it records which of those arrived and which are still open.
 
 ## Getting started
 
-warp needs twill 1.7.0 or newer. There is nothing to build: warp is twill
-source and twill runs it.
+warp needs twill 1.11.0 or newer: the suites are written with `std/test` and
+`src/rng.tw` shifts with `ushr`, and both arrived in 1.11. There is nothing to
+build: warp is twill source and twill runs it.
 
 ```bash
 curl -fsSL -o twill \
-  https://github.com/twill-lang/twill/releases/download/v1.8.0/twill-v1.8.0-linux-amd64
+  https://github.com/twill-lang/twill/releases/download/v1.12.0/twill-v1.12.0-linux-amd64
 chmod +x twill
 ./twill --version
 ```
 
-That prints `Twill 1.8.0`. Swap the suffix for the machine: `linux-amd64`,
+That prints `Twill 1.12.0`. Swap the suffix for the machine: `linux-amd64`,
 `linux-arm64`, `darwin-amd64`, `darwin-arm64` or `windows-amd64.exe`.
 
 Then the suites, from the root of a clone:
@@ -303,8 +304,9 @@ src/
   strutil.tw    parsing, because the subset has none
 tools/fetch.tw  the one thing that is typed rather than imported: download a
                 dataset, or read back the digests of one already on disk
-tests/          five suites, harness.tw is the runner: pipeline, cache,
-                augment (which covers rng too), datasets and stream
+tests/          five suites, written with twill's std/test and collected by
+                twill test: pipeline, cache, augment (which covers rng too),
+                datasets and stream
 docs/needs.md   what the language still owes this code
 docs/datasets.md  the digests, and what is still to verify
 ```

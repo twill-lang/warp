@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/augment.tw" as aug
 import "../src/rng.tw" as rng
 import "../src/sample.tw" as smp
@@ -208,6 +208,20 @@ fn the_generator_never_gets_stuck_at_zero() {
   t.check("the state recovered", nonzero)
 }
 
+# The values are what `rng.new(17)` and `mix` produced before the shifts became
+# `ushr`. A change to any of them is a change to every seeded sequence and every
+# cache key, which docs/needs.md entry 7 says is a version bump and not a
+# cleanup, so it should fail a test rather than pass quietly.
+fn the_seeded_sequence_is_the_one_it_has_always_been() {
+  let r = rng.new(17)
+  t.equal_i64("draw 1 from seed 17", rng.next(r), 120884726)
+  t.equal_i64("draw 2 from seed 17", rng.next(r), 1204474067)
+  t.equal_i64("draw 3 from seed 17", rng.next(r), 2814867803)
+  t.equal_i64("mix of a negative input", rng.mix(0 - 5), 4133086361)
+  t.equal_i64("mix of the full 32-bit word", rng.mix(4294967295), 1669115053)
+  t.equal_i64("seed_for(9, 3, 77)", rng.seed_for(9, 3, 77), 3427051705)
+}
+
 fn unit_stays_inside_a_half_open_interval() {
   let r = rng.new(17)
   let ok = true
@@ -248,5 +262,6 @@ a_time_mask_zeroes_a_single_run()
 jitter_scales_with_the_series_and_not_absolutely()
 a_permutation_is_a_permutation()
 the_generator_never_gets_stuck_at_zero()
+the_seeded_sequence_is_the_one_it_has_always_been()
 unit_stays_inside_a_half_open_interval()
 t.report("augment")
