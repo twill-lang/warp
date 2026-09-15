@@ -5,6 +5,24 @@ cannot point at.
 
 ## Unreleased
 
+### The generator shifts with `ushr`, and the suites are written with `std/test`
+
+`docs/needs.md` entry 7 said there was no `ushr` and entry 13 said the harness
+stayed. twill 1.11 delivered both. `src/rng.tw` shifts with `ushr` in `next`
+and `mix`, so the generator is written over the unsigned words it is defined
+on rather than relying on the 32-bit mask to keep the sign bit clear. No
+sequence changed, because a masked value is never negative and the two shifts
+agree on one, and a new test in `tests/augment_test.tw` pins six values taken
+before the change so that the next edit cannot move them quietly. The mask
+stays: widening the state is a cache-key change and a version bump, as the
+entry says.
+
+`tests/harness.tw` is deleted and every suite imports `"std/test"`, with the
+same four assertions by the same names.
+
+The pin moves from 1.8.0 to 1.12.0 in `spool.toml` and CI, and the README says
+the floor is 1.11.0, the release with both.
+
 ### warp can fetch a dataset
 
 `docs/needs.md` entry 10 asked for an HTTPS client or a process interface and

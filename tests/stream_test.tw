@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/stream.tw" as stream
 import "../src/strutil.tw" as sx
 

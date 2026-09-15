@@ -10,9 +10,11 @@ writing real code and hitting the wall.
 
 **Where this stands.** Delivered: 1 function values and closures, 2 `F64`, 3
 float math, 4 writing files and directories, 5 ranged reads, 7 the sign of
-`shr`, 12 generic containers, 13 a test runner, all on twill 1.7.1, and **10,
-a process interface**, which arrived after it and which `src/datasets.tw` now
-fetches with. Open: 6 number parsing, 8 `Bytes` distinct from `Str`, 9
+`shr`, 12 generic containers, 13 a test runner, all on twill 1.7.1, **10, a
+process interface**, which arrived after it and which `src/datasets.tw` now
+fetches with, and, on twill 1.11, the second halves of 7 and 13: a logical
+shift, `ushr`, which `src/rng.tw` now uses, and `std/test`, which replaced
+`tests/harness.tw`. Open: 6 number parsing, 8 `Bytes` distinct from `Str`, 9
 decompression (available now and deliberately not taken; see the entry), 11 a
 tensor across the seam, 14 an iteration protocol, and 15 below, which this
 repository found while writing the getting-started section. Each entry carries
@@ -137,14 +139,23 @@ whatever prints them, so that printing and parsing round trip.
 **Needs:** a statement of whether `shr` is arithmetic or logical, or two
 operators
 **Used by:** `src/rng.tw` (`mix`, `next`)
-**Status: delivered.** twill's language guide now states that `shr` is
-arithmetic, shifting the sign bit in, and `shr(-8, 1)` is `-4`. There is no
-`ushr` operator; the guide gives the idiom for building one.
+**Status: delivered, in both halves.** twill's language guide states that
+`shr` is arithmetic, shifting the sign bit in, and `shr(-8, 1)` is `-4`. twill
+1.11 then added `ushr(x, k)`, the logical shift, as a builtin call rather than
+an operator: `ushr(0 - 1, 1)` is `9223372036854775807`. `src/rng.tw` shifts
+with it now, in `next` and in `mix`, so the generator is written over the
+unsigned words xorshift and the avalanche are defined on instead of relying on
+the mask to keep the sign bit clear before every shift.
 
-`src/rng.tw` still masks to 32 bits, and that is now a choice rather than a
+`src/rng.tw` still masks to 32 bits, and that is a choice rather than a
 constraint. Widening it would double the state on the hottest path in the
 loader, and it would also change every seeded sequence this library has ever
-produced, so it is a version bump and a cache-key change, not a cleanup.
+produced, so it is a version bump and a cache-key change, not a cleanup. The
+move to `ushr` changed no sequence, because a masked value is never negative
+and the two shifts agree on one;
+`the_seeded_sequence_is_the_one_it_has_always_been` in `tests/augment_test.tw`
+pins six values produced before the change so that the next edit to this file
+cannot move them quietly.
 
 The generator masks everything to 32 bits after every step, so it never shifts a
 negative value, which is a real cost: it throws away half the width of the type
@@ -267,12 +278,20 @@ that was not already a `Res`.
 **Status: delivered.** `twill test tests` collects the suites and reports them,
 and CI runs it against a pinned release.
 
-The harness stayed. Every test file is still a program that calls its cases at
-the bottom and ends with `report`, because that is what makes a file runnable on
-its own, and `twill test` runs it either way. A new test file is picked up
-without anyone adding it to a list. What is still done by hand is the call at
-the bottom of the file, and CI checks the last line is `t.report(` for exactly
-that reason.
+The harness is gone. twill 1.11 shipped `std/test`, the assertions the runner
+had assumed, and every suite imports it in place of `tests/harness.tw`, which
+was one of the copies of the same file that spool, weft, loom and shuttle each
+carried. The four assertions warp calls, `check`, `equal_str`, `equal_i64` and
+`near`, have the same names and signatures there, and `near` still takes the
+tolerance with no default. `report` prints the summary in the shape the runner
+reads, `<suite> passed <p> failed <f>` and then `OK` or `FAILED`, which the
+copy never did.
+
+Every test file is still a program that calls its cases at the bottom and ends
+with `report`, because that is what makes a file runnable on its own, and
+`twill test` runs it either way. A new test file is picked up without anyone
+adding it to a list. What is still done by hand is the call at the bottom of
+the file, and CI checks the last line is `t.report(` for exactly that reason.
 
 ### 14. A defined iteration protocol
 

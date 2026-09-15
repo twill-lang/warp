@@ -12,9 +12,14 @@
 # on every machine, in any order, with any number of workers.
 #
 # All arithmetic is masked to 32 bits after every step. I64 wraps at 64 and the
-# generator is defined at 32, and `shr` on a negative I64 is unspecified, so
-# staying inside 32 bits keeps the sequence identical everywhere. See
-# docs/needs.md.
+# generator is defined at 32, so staying inside 32 bits keeps the sequence
+# identical everywhere. The shifts are `ushr`, the logical right shift twill
+# has had since 1.11: a masked value is never negative, so `shr` would give the
+# same bits today, but the generator is defined over unsigned words and the
+# code now says so instead of relying on the mask to keep the sign bit clear.
+# Widening to 64 bits is still deliberately not done, because it would change
+# every seeded sequence this library has produced and every cache key with it.
+# See docs/needs.md entry 7.
 
 mode systems
 
@@ -33,7 +38,7 @@ fn new(seed: I64) -> Rng = Rng { state: mix(seed) }
 fn next(r: Rng) -> I64 {
   let x = r.state
   x = mask(x xor mask(x shl 13))
-  x = x xor (x shr 17)
+  x = x xor ushr(x, 17)
   x = mask(x xor mask(x shl 5))
   # Zero is absorbing for xorshift, so a state that reaches it stays there and
   # the generator returns zero forever. Substituting the golden-ratio constant
@@ -75,11 +80,11 @@ fn seed_for(base: I64, epoch: I64, index: I64) -> I64 =
 # experiments 1, 2, 3.
 fn mix(x: I64) -> I64 {
   let h = mask(x xor 2166136261)
-  h = mask(h xor (h shr 15))
+  h = mask(h xor ushr(h, 15))
   h = mask(h * 2246822519)
-  h = mask(h xor (h shr 13))
+  h = mask(h xor ushr(h, 13))
   h = mask(h * 3266489917)
-  mask(h xor (h shr 16))
+  mask(h xor ushr(h, 16))
 }
 
 fn mask(x: I64) -> I64 = x band MASK32
