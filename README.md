@@ -37,12 +37,12 @@ build: warp is twill source and twill runs it.
 
 ```bash
 curl -fsSL -o twill \
-  https://github.com/twill-lang/twill/releases/download/v1.12.0/twill-v1.12.0-linux-amd64
+  https://github.com/twill-lang/twill/releases/download/v1.13.0/twill-v1.13.0-linux-amd64
 chmod +x twill
 ./twill --version
 ```
 
-That prints `Twill 1.12.0`. Swap the suffix for the machine: `linux-amd64`,
+That prints `Twill 1.13.0`. Swap the suffix for the machine: `linux-amd64`,
 `linux-arm64`, `darwin-amd64`, `darwin-arm64` or `windows-amd64.exe`.
 
 Then the suites, from the root of a clone:
