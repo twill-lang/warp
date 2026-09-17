@@ -5,6 +5,14 @@ cannot point at.
 
 ## Unreleased
 
+### Take twill 1.13.0
+
+twill 1.13.0 is released, so the pin follows it. `spool.toml` and CI move from
+1.12.0 to 1.13.0, and the README install line downloads and prints 1.13.0. No
+source or test changed: the floor is still 1.11.0, the five suites pass
+unchanged, and this is a currency bump so a clone builds against the current
+release.
+
 ### The generator shifts with `ushr`, and the suites are written with `std/test`
 
 `docs/needs.md` entry 7 said there was no `ushr` and entry 13 said the harness
