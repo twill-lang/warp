@@ -5,6 +5,13 @@ cannot point at.
 
 ## Unreleased
 
+### Take twill 1.19.1
+
+twill 1.19.1 is released, so the pin follows it. `spool.toml`, CI and the README
+install line move from 1.19.0 to 1.19.1. This is a currency bump: no source or
+test changed, and the five suites pass unchanged on 1.19.1. 1.19.1 fixes
+`tensor()` on an `Arr[I64]` filled from typed variables (twill-lang/twill#73).
+
 ### Take twill 1.13.0
 
 twill 1.13.0 is released, so the pin follows it. `spool.toml` and CI move from
